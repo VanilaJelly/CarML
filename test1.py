@@ -6,6 +6,7 @@ Created on Mon Aug 20 22:28:11 2018
 """
 
 import pandas as pd
+import numpy as np
 
 
 
@@ -27,12 +28,14 @@ def conv_to_sec(time_split):
 
 
     
-df = pd.read_csv("d1-n-data.csv", sep = ",")
+df = pd.read_csv("re_data.csv", sep = ",")
 
 time_split = []
 time_in_sec = []
 
-len_data = 2051
+len_data = 2055
+
+
 
 
 for i in range(0, len_data):
@@ -52,34 +55,43 @@ for i in range(0, len_data):
     
     time_in_sec.append(t1-t0)
 
+
+
+fuel = list(df["Fuel.Level"][:len_data])
+vspeed = list(df["Vehicle.Speed"][:len_data])
+
+
+
+i = 0
+while i < len_data:
+    if np.isnan(fuel[i]) or np.isnan(vspeed[i]):
+        print (i, "nan")
+        vspeed = vspeed[:i] + vspeed[i+1:]
+        fuel = fuel[:i] + fuel[i+1:]
+        time_in_sec = time_in_sec[:i] + time_in_sec[i+1:]
+        len_data = len_data - 1
+        i = i -1
+    i = i + 1
+
+
+
+print (vspeed[1230])  
+print (len_data)
+
+  
 dist = [0]
 for i in range(1, len_data):
     tdiff = time_in_sec[i] - time_in_sec[i-1]
-    speed = float(df["Vehicle Speed"][i])
-    speed0 = float(df["Vehicle Speed"][i-1])
+    speed = vspeed[i]
+    speed0 = vspeed[i-1]
     
     dist.append(dist[i-1] + tdiff*(speed+speed0)/2)
     
-timeinsec = pd.Series(time_in_sec)
-distances = pd.Series(dist)
-fuel = list(df["Fuel Level"][:len_data])
-vspeed = list(df["Vehicle Speed"][:len_data])
+ 
 
-#except NODATA in fuellevel 
-daterror = []
-i = 0
-while i < len_data:
-    try:
-        float(fuel[i][:-1])
-        fuel[i] = fuel[i][:-1]
-        i = i + 1
-    except ValueError:
-        timeinsec = timeinsec[:i] + timeinsec[i+1:]
-        del dist[i]
-        del vspeed[i]
-        del fuel[i]
-        len_data = len_data - 1
-    
+distances = pd.Series(dist)
+
+timeinsec = pd.Series(time_in_sec)
 
 timedist = pd.DataFrame({'Time(sec)' : timeinsec,
                          'Dist': dist,

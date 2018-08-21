@@ -2,7 +2,9 @@
 """
 Created on Tue Aug 21 10:30:42 2018
 
-@author: 이수민
+@author: Sumin Lee
+
+Trying to find out fuel efficiency
 """
 
 import numpy as np
@@ -27,3 +29,4 @@ for i in range(2, dlen-2):
     fuel2 = float(fuel[i][:-1])
     
     fuel_1.append((fuel0+fuel1+fuel2)/3)
+

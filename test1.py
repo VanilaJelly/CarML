@@ -5,10 +5,11 @@ Created on Mon Aug 20 22:28:11 2018
 @author: Sumin Lee
 """
 
-import numpy as np
 import pandas as pd
 
 
+
+#convert given date to second-scale
 def conv_to_sec(time_split):
     month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0]
     min_const = 60
@@ -22,17 +23,17 @@ def conv_to_sec(time_split):
     tinsec = tinsec + month[time_split[1]-2]*day_const + year_const * time_split[0]
     
     return tinsec
+
+
+
     
-
-
-df = pd.read_csv("d1-r-data.csv", sep = ",")
 df = pd.read_csv("d1-n-data.csv", sep = ",")
-df_array = df.as_matrix()
 
 time_split = []
 time_in_sec = []
 
 len_data = 2051
+
 
 for i in range(0, len_data):
     time = df["time_slot"][i]
@@ -43,7 +44,8 @@ for i in range(0, len_data):
     time_split[i].append(int(time[11:13]))      #hour
     time_split[i].append(int(time[14:16]))      #min
     time_split[i].append(float(time[17:-1]))    #sec
-
+    
+#fix t0 as 0
 t0 = conv_to_sec(time_split[0])
 for i in range(0, len_data):
     t1 = conv_to_sec(time_split[i])
@@ -60,9 +62,10 @@ for i in range(1, len_data):
     
 timeinsec = pd.Series(time_in_sec)
 distances = pd.Series(dist)
-fuel = df["Fuel Level"][:2051]
-vspeed = df["Vehicle Speed"][:2051]
+fuel = df["Fuel Level"][:len_data]
+vspeed = df["Vehicle Speed"][:len_data]
 
+#except NODATA in fuellevel 
 daterror = []
 for i in range(len_data):
     try:

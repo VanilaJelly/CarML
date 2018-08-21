@@ -35,9 +35,6 @@ time_in_sec = []
 
 len_data = 2055
 
-
-
-
 for i in range(0, len_data):
     time = df["time_slot"][i]
     time_split.append([])
@@ -55,44 +52,76 @@ for i in range(0, len_data):
     
     time_in_sec.append(t1-t0)
 
-
+print ("time_in_sec calculated")
 
 fuel = list(df["Fuel.Level"][:len_data])
 vspeed = list(df["Vehicle.Speed"][:len_data])
 
 
-
+#exclude "nan"
 i = 0
 while i < len_data:
     if np.isnan(fuel[i]) or np.isnan(vspeed[i]):
-        print (i, "nan")
         vspeed = vspeed[:i] + vspeed[i+1:]
         fuel = fuel[:i] + fuel[i+1:]
         time_in_sec = time_in_sec[:i] + time_in_sec[i+1:]
+        time_split = time_split[:i] + time_split[i+1:]
         len_data = len_data - 1
         i = i -1
     i = i + 1
+    
+print ("NaN data excluded")
 
 
 
-print (vspeed[1230])  
+'''
+#makes sure 'nan' data excluded
+print (vspeed[1230])
 print (len_data)
+'''
 
-  
+#calculate estimated distance
 dist = [0]
 for i in range(1, len_data):
     tdiff = time_in_sec[i] - time_in_sec[i-1]
     speed = vspeed[i]
-    speed0 = vspeed[i-1]
-    
+    speed0 = vspeed[i-1]    
     dist.append(dist[i-1] + tdiff*(speed+speed0)/2)
+
+print ("Dist calculated")
+
+print(len(time_split))  
+#calculate average fuel level in minute scale
+   
+#initialize the list with 1    
+fuel_minavg = []
+for i in range(len_data):
+   fuel_minavg.append(-1) 
     
+i = 0
+while i < len_data:
+    stt = i
+    fuelavg = fuel[i]
+    i = i + 1
+    if i >= len_data:
+        break
+    
+    while time_split[stt][4] == time_split[i][4]:
+        fuelavg = fuelavg + fuel[i]
+        i = i + 1
+        if i >= len_data:
+            break
+    stop = i
+    fuelavg = fuelavg/(stop-stt)
+
+    for j in range(stt, i):
+        fuel_minavg[j] = fuelavg
+        
+print ("avg fuel level(in minute) calculated")
  
-
+#store datas into csv file
 distances = pd.Series(dist)
-
 timeinsec = pd.Series(time_in_sec)
-
 timedist = pd.DataFrame({'Time(sec)' : timeinsec,
                          'Dist': dist,
                          'Vehicle speed' : vspeed,

@@ -3,20 +3,42 @@
 Created on Tue Aug 21 20:02:06 2018
 
 @author: Sumin Lee
+
+Lable data
 """
 
 import pandas as pd
 import numpy as np
 
+def freqcounter(target):
+    cnt = []
+    for i in range(11):
+        cnt.append(0)
+    for i in range(len_data):
+        if target[i] < 0:
+            continue
+        index = int(target[i]*100)
+        cnt[index] = cnt[index] + 1
+    print (cnt)
+    
+def freqcounter2(target):
+    cnt = []
+    for i in range(11):
+        cnt.append(0)
+    for i in range(1275):
+        index = int(target[i]/10)
+        cnt[index] = cnt[index] + 1
+    print (cnt)
+
 
 df = pd.read_csv("re_data.csv", sep = ",")
+len_data = 2055
 
 RPM = list(df["Engine.RPM"])
 load = list(df["Engine.Load"])
 speed = list(df["Vehicle.Speed"])
 throttle = list(df["Throttle.Position"])
 
-len_data = 2055
 print ("File opened!")
 
 #exclude "nan"
@@ -59,30 +81,10 @@ for i in range(len_data):
 zerolist.reverse()
 
 for i in zerolist:
-    del fload[i]
-    
+    del fload[i]    
 
 print ("The ratios calcualted")
 
-def freqcounter(target):
-    cnt = []
-    for i in range(11):
-        cnt.append(0)
-    for i in range(len_data):
-        if target[i] < 0:
-            continue
-        index = int(target[i]*100)
-        cnt[index] = cnt[index] + 1
-    print (cnt)
-    
-def freqcounter2(target):
-    cnt = []
-    for i in range(11):
-        cnt.append(0)
-    for i in range(1275):
-        index = int(target[i]/10)
-        cnt[index] = cnt[index] + 1
-    print (cnt)
 
 print ("Vehicle speed over RPM - freq")
 freqcounter(vsoverrpm)
@@ -98,7 +100,7 @@ for i in range(len_data):
     if speed[i] == 0:
         label.append(0)
         continue
-    if vsoverrpm[i] >= 0.05:
+    if vsoverrpm[i] >= 0.04:
         label.append(-1)
     elif thoverrpm[i] >= 0.02:
         label.append(-1)

@@ -62,24 +62,24 @@ for i in range(1, len_data):
     
 timeinsec = pd.Series(time_in_sec)
 distances = pd.Series(dist)
-fuel = df["Fuel Level"][:len_data]
-vspeed = df["Vehicle Speed"][:len_data]
+fuel = list(df["Fuel Level"][:len_data])
+vspeed = list(df["Vehicle Speed"][:len_data])
 
 #except NODATA in fuellevel 
 daterror = []
-for i in range(len_data):
+i = 0
+while i < len_data:
     try:
         float(fuel[i][:-1])
+        fuel[i] = fuel[i][:-1]
+        i = i + 1
     except ValueError:
-        daterror.append(i)
-
-daterror.reverse()
-        
-for i in daterror:
-    del timeinsec[i]
-    del dist[i]
-    del vspeed[i]
-    del fuel[i]
+        timeinsec = timeinsec[:i] + timeinsec[i+1:]
+        del dist[i]
+        del vspeed[i]
+        del fuel[i]
+        len_data = len_data - 1
+    
 
 timedist = pd.DataFrame({'Time(sec)' : timeinsec,
                          'Dist': dist,

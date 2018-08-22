@@ -10,8 +10,27 @@ Calculate fuel efficiency in various scale
 import numpy as np
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
 len_data = 2044
 
+def plot_2D(data_X, data_y, data_y2, cases):
+
+
+    plt.plot(data_X, data_y, color='blue', linewidth = 3, label = "Fuel Efficiency")
+    plt.plot(data_X, data_y2, color='red', linewidth = 3, label = "Speed")
+    
+    plt.xlabel('time')
+
+    plt.xticks(())
+    plt.yticks(())
+    
+    plt.legend()
+    
+    plt.show()
+
+        
+        
 
 #avg of self and neighboor
 def smoother(fuel, len_data):
@@ -24,12 +43,27 @@ def smoother(fuel, len_data):
         fuel_3avg.append((fuel0+fuel1+fuel2)/3)
     return fuel_3avg
 
+def instanteff(fuel, dist, ndata):
+    eff = -1
+    nowfuel = fuel[ndata]
+    nowdist = dist[ndata]
+    while ndata >= 0:
+        ndata = ndata - 1
+        sfuel = fuel[ndata]
+        sdist = dist[ndata]
+        if sfuel > nowfuel:
+            eff = ((nowdist - sdist) / ((sfuel - nowfuel)*0.35))
+            break
+    return eff
+        
 
 d1 = pd.read_csv("data1.csv", sep = ",")
+
 
 fuel = np.array(d1["Fuel Level"])
 dist = np.array(d1["Dist"])
 speed = np.array(d1["Vehicle speed"])
+time_sec = np.array(d1["Time(sec)"])
 
 
 len_data = 2044
@@ -52,48 +86,75 @@ fuel_3 = fuel[partition[1]:]
 #find out when the car was stopped before 1st charge
 i = -1
 stoplist = []
-while i < partition[0]:
+while i < len_data:
     i = i + 1
-    if speed[i] == 0:
+    if speed[i] == 0 and i < len_data-1:
         cnt = 0
         start = i
         i = i + 1
-        while speed[i] == 0:
+        while i < len_data:
+            if speed[i] != 0:
+                break
             i = i + 1
             cnt = cnt + 1
             end = i
         if cnt > 5:
+            if end == len_data:
+                end = end - 1
             stoplist.append([start, end])
 
 print ("car stops during", stoplist)
 
 
-#calculate fuel efficiency (start~stop)
-startdist = dist[0]
-startfuel = fuel_1[0]
-eff = []
-for pair in stoplist:
-    nowfuel = fuel_1[pair[0]]
-    nowdist = dist[pair[0]]
-    
-    noweff = (startfuel - nowfuel) / (nowdist - startdist)
-    
-    eff.append(noweff)
-    
-    startfuel = fuel_1[pair[1]]
-    startdist = dist[pair[1]]
-    
-print (eff, "\n")
+def fueleffgap1(partition, stoplist, fuel):
+    #calculate fuel efficiency (start~stop) 
+    startdist = dist[0]
+    startfuel = fuel[0]
+    startpair = [0, 0]
+    eff = []
+    for pair in stoplist:
+        nowfuel = fuel[pair[0]]
+        nowdist = dist[pair[0]]
+        
+        for p in partition:
+            if startpair[1] < p and pair[0] > p:
+                nowfuel = nowfuel - fuel[p]
+        
+        if startfuel == nowfuel:
+            startfuel = fuel[pair[1]]
+            startdist = dist[pair[1]]
+            continue
+        noweff = ((nowdist - startdist) /( (startfuel - nowfuel)*0.35))
+        
+        eff.append(noweff)
+        
+        startpair = pair
+        startfuel = fuel[pair[1]]
+        startdist = dist[pair[1]]
+
+    avg = 0
+    for e in eff:
+        avg = avg + e
+    avg = avg /len(eff)
+    print ("\navg of small gap(between stops) fuel efficiency is: ", avg, "\n")
+ 
+#print stoplist   
+fueleffgap1(partition, stoplist, fuel)
 
 #calculate fuel efficiency(charge~recharge)
 startdist = dist[0]
 startfuel = fuel_1[0]
 partition.append(len_data-1)
 
+
+print ("\n\n===efficiency in big gap(charge~recharge)==")
+
 for time in partition:
-    fueldiff = startfuel - fuel[time-1]
+    fueldiff = (startfuel - fuel[time-1])*0.35
     distdiff = dist[time-1]- startdist
-    bigeff = (fueldiff/ distdiff)
+    if distdiff == 0:
+        continue
+    bigeff = distdiff/fueldiff
     
     print ("\ninitial fuel: ", startfuel, "final fuel: ", fuel[time-1], "diff: ", fueldiff)
     print ("initial dist: ", startdist, "final dist: ", dist[time-1], "diff: ", distdiff)
@@ -101,4 +162,20 @@ for time in partition:
     
     startfuel = fuel[time]
     startdist = dist[time]
+
+insteff = [-1]   
+for i in range(1, len_data):
+    insteff.append(instanteff(fuel, dist, i))
+   
+insteff_1 = []
+avg = 0
+for i in range(len(insteff)):
+    e = insteff[i]
+    if e < 0:
+        continue
+    avg = avg + e
+avg = avg /len(insteff)
+print ("\n\navg of instant fuel efficiency is : ", avg, "\n")
+
+plot_2D(time_sec, insteff, speed, len_data)
     

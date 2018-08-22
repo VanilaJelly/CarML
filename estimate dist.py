@@ -45,8 +45,8 @@ for i in range(0, len_data):
     time_split[i].append(int(time[8:10]))       #day
     time_split[i].append(int(time[11:13]))      #hour
     time_split[i].append(int(time[14:16]))      #min
-    time_split[i].append(float(time[17:-1]))    #sec
-    
+    time_split[i].append(float(time[17:23]))
+
 #fix t0 as 0
 t0 = conv_to_sec(time_split[0])
 for i in range(0, len_data):
@@ -78,17 +78,17 @@ print ("NaN data excluded")
 
 '''
 #makes sure 'nan' data excluded
-print (vspeed[1230])
-print (len_data)
+#print (vspeed[1230])
+#print (len_data)
 '''
 
 #calculate estimated distance
 dist = [0]
 for i in range(1, len_data):
-    tdiff = time_in_sec[i] - time_in_sec[i-1]
+    tdiff = (time_in_sec[i] - time_in_sec[i-1])
     speed = vspeed[i]
     speed0 = vspeed[i-1]    
-    dist.append(dist[i-1] + tdiff*(speed+speed0)/2)
+    dist.append(dist[i-1] + tdiff*(speed+speed0)/7200)
 
 print ("Dist calculated")
 
@@ -130,5 +130,3 @@ timedist = pd.DataFrame({'Time(sec)' : timeinsec,
                          'Fuel Level' : fuel})
                          
 timedist.to_csv('data1.csv', index = False)
-
-    

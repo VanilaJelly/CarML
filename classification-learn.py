@@ -14,8 +14,6 @@ from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
-#plt: 3D plot
-#pl: 2D plot
 import matplotlib.pyplot as plt
 
 def accuracy(test_y, output_y, testcases):

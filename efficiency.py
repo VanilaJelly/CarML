@@ -45,12 +45,11 @@ for i in range(0, len_data-1):
         partition.append(i+1)
 
 #partition = [199, 1550]
-
 fuel_1 = fuel[:partition[0]]
 fuel_2 = fuel[partition[0]:partition[1]]
 fuel_3 = fuel[partition[1]:]
 
-#find out when the car was stopped
+#find out when the car was stopped before 1st charge
 i = -1
 stoplist = []
 while i < partition[0]:

@@ -100,7 +100,7 @@ for i in range(len_data):
     if speed[i] == 0:
         label.append(0)
         continue
-    if vsoverrpm[i] >= 0.04:
+    if vsoverrpm[i] >= 0.05:
         label.append(-1)
     elif thoverrpm[i] >= 0.02:
         label.append(-1)

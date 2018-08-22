@@ -15,6 +15,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def accuracy(test_y, output_y, testcases):
     #count : number of right guesses

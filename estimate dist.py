@@ -59,6 +59,9 @@ print ("time_in_sec calculated")
 fuel = list(df["Fuel.Level"][:len_data])
 vspeed = list(df["Vehicle.Speed"][:len_data])
 
+for i in range(len_data):
+    fuel[i] = fuel[i] * 0.35
+
 
 #exclude "nan"
 i = 0
@@ -120,13 +123,22 @@ while i < len_data:
         fuel_minavg[j] = fuelavg
         
 print ("avg fuel level(in minute) calculated")
+
+acc = [0]
+for i in range(1, len_data):
+    vdiff = vspeed[i] - vspeed[i-1]
+    tdiff = time_in_sec[i] - time_in_sec[i-1]
+    acc.append(vdiff/tdiff)
  
 #store datas into csv file
 distances = pd.Series(dist)
 timeinsec = pd.Series(time_in_sec)
+fuel = pd.Series(fuel)
+acc = pd.Series(acc)
 timedist = pd.DataFrame({'Time(sec)' : timeinsec,
                          'Dist': dist,
                          'Vehicle speed' : vspeed,
-                         'Fuel Level' : fuel})
+                         'Fuel Level' : fuel,
+                         'Acc': acc})
                          
 timedist.to_csv('data1.csv', index = False)

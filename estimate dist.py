@@ -10,8 +10,6 @@ Calculate estimated distance, and average fuel level in minute.
 import pandas as pd
 import numpy as np
 
-
-
 #convert given date to second-scale
 def conv_to_sec(time_split):
     month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 0]
@@ -28,42 +26,44 @@ def conv_to_sec(time_split):
     return tinsec
 
 
-
     
 df = pd.read_csv("re_data.csv", sep = ",")
 
-time_split = []
-time_in_sec = []
-
 len_data = 2055
-
-for i in range(0, len_data):
-    time = df["time_slot"][i]
-    time_split.append([])
-    time_split[i].append(int(time[:4]) - 2018)  #year
-    time_split[i].append(int(time[5:7]))        #month
-    time_split[i].append(int(time[8:10]))       #day
-    time_split[i].append(int(time[11:13]))      #hour
-    time_split[i].append(int(time[14:16]))      #min
-    time_split[i].append(float(time[17:23]))
-
-#fix t0 as 0
-t0 = conv_to_sec(time_split[0])
-for i in range(0, len_data):
-    t1 = conv_to_sec(time_split[i])
-    
-    time_in_sec.append(t1-t0)
-
-print ("time_in_sec calculated")
 
 fuel = list(df["Fuel.Level"][:len_data])
 vspeed = list(df["Vehicle.Speed"][:len_data])
 
+
+time_split = []
+time_in_sec = []
+for i in range(0, len_data):
+    time = df["time_slot"][i]
+    time_split.append([])
+    time_split[i].append(int(time[:4]) - 2018)  # year
+    time_split[i].append(int(time[5:7]))        # month
+    time_split[i].append(int(time[8:10]))       # day
+    time_split[i].append(int(time[11:13]))      # hour
+    time_split[i].append(int(time[14:16]))      # min
+    time_split[i].append(float(time[17:23]))    # second
+
+# Fix t0 as 0
+t0 = conv_to_sec(time_split[0])
+
+# convert time
+for i in range(0, len_data):
+    t1 = conv_to_sec(time_split[i])   
+    time_in_sec.append(t1-t0)
+
+print ("time_in_sec calculated")
+
+
+# Apply volume of fuel tank
 for i in range(len_data):
     fuel[i] = fuel[i] * 0.35
 
 
-#exclude "nan"
+# exclude "nan"
 i = 0
 while i < len_data:
     if np.isnan(fuel[i]) or np.isnan(vspeed[i]):
@@ -79,16 +79,12 @@ print ("NaN data excluded")
 
 
 
-'''
-#makes sure 'nan' data excluded
-#print (vspeed[1230])
-#print (len_data)
-'''
 
 #calculate estimated distance
 dist = [0]
 for i in range(1, len_data):
     tdiff = (time_in_sec[i] - time_in_sec[i-1])
+    # Set the maximum time gap 2 min    
     if tdiff > 120:
         tdiff = 120
     speed = vspeed[i]
@@ -97,42 +93,18 @@ for i in range(1, len_data):
 
 print ("Dist calculated")
 
-print(len(time_split))  
-#calculate average fuel level in minute scale
-   
-#initialize the list with 1    
-fuel_minavg = []
-for i in range(len_data):
-   fuel_minavg.append(-1) 
-    
-i = 0
-while i < len_data:
-    stt = i
-    fuelavg = fuel[i]
-    i = i + 1
-    if i >= len_data:
-        break
-    
-    while time_split[stt][4] == time_split[i][4]:
-        fuelavg = fuelavg + fuel[i]
-        i = i + 1
-        if i >= len_data:
-            break
-    stop = i
-    fuelavg = fuelavg/(stop-stt)
 
-    for j in range(stt, i):
-        fuel_minavg[j] = fuelavg
-        
-print ("avg fuel level(in minute) calculated")
 
+# Calculate the acceration
 acc = [0]
 for i in range(1, len_data):
     vdiff = vspeed[i] - vspeed[i-1]
     tdiff = time_in_sec[i] - time_in_sec[i-1]
-    if tdiff > 100:
-        tdiff = 100
+    if tdiff > 120:
+        tdiff = 120
     acc.append(vdiff/tdiff)
+ 
+ 
  
 #store datas into csv file
 distances = pd.Series(dist)

@@ -89,6 +89,8 @@ print ("NaN data excluded")
 dist = [0]
 for i in range(1, len_data):
     tdiff = (time_in_sec[i] - time_in_sec[i-1])
+    if tdiff > 120:
+        tdiff = 120
     speed = vspeed[i]
     speed0 = vspeed[i-1]    
     dist.append(dist[i-1] + tdiff*(speed+speed0)/7200)
@@ -128,6 +130,8 @@ acc = [0]
 for i in range(1, len_data):
     vdiff = vspeed[i] - vspeed[i-1]
     tdiff = time_in_sec[i] - time_in_sec[i-1]
+    if tdiff > 100:
+        tdiff = 100
     acc.append(vdiff/tdiff)
  
 #store datas into csv file

@@ -40,11 +40,20 @@ def smoother(fuel, len_data):
     fuel_3avg.append(fuel[len_data-1])
     return fuel_3avg
 
-def instanteff(fuel, dist, ndata):
+def instanteff(stoplist, partition, fuel, dist, ndata):
+    for stop in stoplist:
+        if ndata>stop[0] and ndata<stop[1]:
+            return -1
     eff = -1
+
     nowfuel = fuel[ndata]
     nowdist = dist[ndata]
-    while ndata > 0:
+    p = 0
+    for i in range(3):
+        if ndata>partition[i] and ndata<partition[i+1]:
+            p = partition[i]
+        
+    while ndata >= p:
         ndata = ndata - 1
         sfuel = fuel[ndata]
         sdist = dist[ndata]
@@ -53,10 +62,40 @@ def instanteff(fuel, dist, ndata):
             break
     return eff
         
+def mineff(stoplist, time, partition, fuel, dist, ndata):
+    for stop in stoplist:
+        if ndata>stop[0] and ndata<stop[1]:
+            return -2
+    eff = -1
 
-d1 = pd.read_csv("data1.csv", sep = ",")
+    cp = ndata
+    nowfuel = fuel[ndata]
+    nowdist = dist[ndata]
+    p = 0
+    for i in range(3):
+        if ndata>partition[i] and ndata<partition[i+1]:
+            p = partition[i]
+
+    while ndata > p:
+        if (time[cp] - time[ndata]) < 55:
+            ndata = ndata -1
+        else:
+            break
+
+    while ndata >= p:
+        ndata = ndata - 1
+        sfuel = fuel[ndata]
+        sdist = dist[ndata]
+        if sfuel > nowfuel:
+            eff = ((nowdist - sdist) / ((sfuel - nowfuel)))
+            break
+    return eff    
+    
+    
+d1 = pd.read_csv("data3.csv", sep = ",")
 
 
+pfuel = np.array(d1["Predicted Fuel Level"])
 fuel = np.array(d1["Fuel Level"])
 dist = np.array(d1["Dist"])
 speed = np.array(d1["Vehicle speed"])
@@ -72,11 +111,7 @@ for i in range(0, len_data-2):
         partition.append(i+1)
 
 print (partition)
-'''
-fuel_1 = fuel[:partition[0]]
-fuel_2 = fuel[partition[0]:partition[1]]
-fuel_3 = fuel[partition[1]:]
-'''
+
 #find out when the car was stopped before 1st charge
 i = -1
 stoplist = []
@@ -97,14 +132,28 @@ while i < len_data:
                 end = end - 1
             stoplist.append([start, end])
 
-print ("car stops during", stoplist)
 
 
 def fueleffgap1(partition, stoplist, fuel):
+    
+    p1 = partition[0]
+    p2 = partition[1]
+    p3 = len_data
+    p = [0, p1, p2, p3]
+    
+    newstoplist = []
+    for stop in stoplist:
+        for i in range(3):
+            if stop[0] > p[i] and stop[1] < p[i+1]:
+                newstoplist.append(stop)
+                break
+            
+    newstoplist = stoplist
     #calculate fuel efficiency (start~stop) 
     startdist = dist[0]
     startfuel = fuel[0]
     startpair = [0, 0]
+    possibledist = []
     eff = []
     for pair in stoplist:
         nowfuel = fuel[pair[0]]
@@ -119,7 +168,10 @@ def fueleffgap1(partition, stoplist, fuel):
             startdist = dist[pair[1]]
             continue
         noweff = ((nowdist - startdist) /( (startfuel - nowfuel)))
-        
+        if startfuel-nowfuel < 0.005:
+            continue
+        possdist = noweff*nowfuel
+        possibledist.append(possdist)
         eff.append(noweff)
         
         startpair = pair
@@ -130,7 +182,9 @@ def fueleffgap1(partition, stoplist, fuel):
     for e in eff:
         avg = avg + e
     avg = avg /len(eff)
+
     print ("\navg of small gap(between stops) fuel efficiency is: ", avg, "\n")
+    
  
 #print stoplist   
 fueleffgap1(partition, stoplist, fuel)
@@ -157,24 +211,61 @@ for time in partition:
     startfuel = fuel[time]
     startdist = dist[time]
 
-insteff = [-1]   
+insteff = [-1] 
+
+minueff = [-1]
+
 for i in range(1, len_data):
-    insteff.append(instanteff(fuel, dist, i))
-   
-insteff_1 = []
+    insteff.append(instanteff(stoplist, partition, pfuel, dist, i))
+    minueff.append(mineff(stoplist, time_sec, partition, pfuel, dist, i))
+
+avgeff = [0, ]
 len_eff = len_data
-avg = 0
-for i in range(len(insteff)):
+len_eff1 = len_data
+avg = insteff[0]
+mvag = minueff[0]
+for i in range(1, len(insteff)):
     e = insteff[i]
+    e1 = minueff[i]
     if e < 0:
         len_eff = len_eff -1
-        continue
-    avg = avg + e
-    insteff[i] = insteff[i]
+    else:
+        avg = avg + e    
+    if e1 < 0:
+        len_eff1 = len_eff1 -1
+    else:
+        mvag = mvag + e1
 
 avg = avg /len_eff
-print ("\n\navg of instant fuel efficiency is : ", avg, "\n")
+mvag = mvag / len_eff1
+print ("\n\navg of instant fuel efficiency is : ", avg, mvag, "\n")
 
+fuel_1 = []
+for i in range(len_data):
+    fuel_1.append(pfuel[i])
+
+
+for i in range(len_data):
+    if i <= partition[0]:
+        fuel_1[i] = fuel_1[i] + fuel_1[partition[0]] + fuel_1[partition[1]]
+        fuel_1[i] = fuel_1[i] - fuel_1[partition[0]-1] - fuel_1[partition[1]-1]
+    if i > partition[0] and i <= partition[1]:
+        fuel_1[i] = fuel_1[i] + fuel_1[partition[1]] - fuel_1[partition[1]-1]
+
+for i in range(1, len_data):
+    avgeff.append(dist[i]/(fuel_1[0] - fuel_1[i]))
+
+print ("Average fuel efficiency is: ", avgeff[len_data-1])
+
+
+avgspd = 0
+count = 0
+for i in range(len_data):
+    if speed[i] != 0:
+        avgspd = avgspd + speed[i]
+        count = count + 1
+print (avgspd/count)
+'''
 fuel_smt = smoother(fuel, len_data)
 
 insteff_smt = [-1]   
@@ -190,7 +281,24 @@ for i in range(len_data):
     avg = avg + e
 avg = avg /len_eff1
 print ("\n\navg of instant fuel(smt) efficiency is : ", avg, "\n")
-
+'''
 plot_2D(time_sec, insteff, speed, len_data)
 
-    
+insteff = pd.Series(insteff)
+minueff = pd.Series(minueff)
+avgeff = pd.Series(avgeff)
+
+
+timedist = pd.DataFrame({'Time(sec)' : d1["Time(sec)"],
+                         'Dist': d1["Dist"],
+                         'Vehicle speed' : d1["Vehicle speed"],
+                         'Fuel Level' : d1["Fuel Level"],
+                         'Acc': d1["Acc"],
+                         'Predicted Fuel Level':d1["Predicted Fuel Level"],
+                         'Instant Fuel Efficiency': insteff,
+                         '(Minute) Fuel Efficiency' : minueff,
+                         'Average Fuel Efficiency': avgeff})
+                         
+
+timedist.to_csv('data2.csv', index = False)
+

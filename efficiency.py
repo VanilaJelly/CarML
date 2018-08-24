@@ -12,15 +12,31 @@ import matplotlib.pyplot as plt
 
 len_data = 2044
 
-def plot_2D(data_X, data_y, data_y2, cases):
+def plot_2D_3(data_X, data_y, data_y2, data_y3, cases):
+    
 
-    plt.plot(data_X, data_y, color='blue', linewidth = 3)
-    plt.plot(data_X, data_y2, color='red', linewidth = 3)
+    plt.plot(data_X, data_y, color='blue', linewidth = 2, label = 'mobility')
+    plt.plot(data_X, data_y2, color='red', linewidth = 1, label = 'fuel level')
+    plt.plot(data_X, data_y3, color='green', linewidth = 1, label = 'efficiency')
     
     plt.xlabel('time')
     plt.xticks(())
     plt.yticks(())
     
+    plt.legend()
+    plt.show()
+
+def plot_2D(data_X, data_y, data_y2, cases):
+    
+
+    plt.plot(data_X, data_y, color='blue', linewidth = 2, label = 'possible distance')
+    plt.plot(data_X, data_y2, color='red', linewidth = 1, label = 'fuel level')
+    
+    plt.xlabel('time')
+    plt.xticks(())
+    plt.yticks(())
+    
+    plt.legend()
     plt.show()
 
 #Calculate instant Fuel Efficiency
@@ -28,6 +44,9 @@ def instanteff(stoplist, partition, fuel, dist, ndata):
     # If the vehicle speed is 0, canot calculate instant fuel efficiency
     for stop in stoplist:
         if ndata>stop[0] and ndata<stop[1]:
+            return -1
+    for p in partition:
+        if ndata == p:
             return -1
     # If there isn't past point where fuel level is higher than now,
     # cannot calculate instant  fuel efficiency
@@ -41,15 +60,17 @@ def instanteff(stoplist, partition, fuel, dist, ndata):
     for i in range(3):
         if ndata>partition[i] and ndata<partition[i+1]:
             p = partition[i]
+    m = ndata - 5
     
     # Find nearest past point, where fuel level is higher than now
-    while ndata >= p:
+    while ndata >= p and ndata >= m:
         ndata = ndata - 1
         sfuel = fuel[ndata]
         sdist = dist[ndata]
-        if sfuel > nowfuel:
+        if sfuel > nowfuel and ndata >= m:
             eff = ((nowdist - sdist) / ((sfuel - nowfuel)))
             break
+
     return eff
 
 # Calculate Fuel Efficiency in minute-scale
@@ -113,6 +134,7 @@ print (partition)
 # Find out when the vehicle speed =0, for at lest 6 check
 i = -1
 stoplist = []
+stoplistforgraph = []
 while i < len_data:
     i = i + 1
     if speed[i] == 0 and i < len_data-1:
@@ -129,6 +151,7 @@ while i < len_data:
             if end == len_data:
                 end = end - 1
             stoplist.append([start, end])
+            stoplistforgraph.append(start)
 
 # Calculate fuel efficiency During the given gaps
 def fueleffgap1(partition, stoplist, fuel, dist, len_data):
@@ -154,6 +177,7 @@ def fueleffgap1(partition, stoplist, fuel, dist, len_data):
     startpair = [0, 0]
     possibledist = []
     eff = []
+    stoplistforgraph = []
     for pair in stoplist:
         nowfuel = fuel[pair[0]]
         nowdist = dist[pair[0]]
@@ -172,6 +196,7 @@ def fueleffgap1(partition, stoplist, fuel, dist, len_data):
         possdist = noweff*nowfuel
         possibledist.append(possdist)
         eff.append(noweff)
+        stoplistforgraph.append(nowdist)
         
         startpair = pair
         startfuel = fuel[pair[1]]
@@ -182,7 +207,20 @@ def fueleffgap1(partition, stoplist, fuel, dist, len_data):
         avg = avg + e
     avg = avg /len(eff)
 
+
+    plt.plot(stoplistforgraph,eff, color='red', linewidth = 1)
+    plt.xlabel('Time')
+    plt.ylabel("Fuel Efficiency")
+    plt.xticks(())
+    plt.yticks(())
+        
+    plt.legend()
+    plt.show()
+
+    plt.show()
     print ("\navg of small gap(between stops) fuel efficiency is: ", avg, "\n")
+    
+    return (eff, stoplistforgraph)
     
 # Calculate fuel efficiency(charge~recharge)    
 def fueleffgap2(partition, fuel, dist, len_data):
@@ -222,13 +260,15 @@ def avgfueleff(time_sec, pfuel, dist, len_data):
         if i > partition[0] and i <= partition[1]:
             fuel_1[i] = fuel_1[i] + fuel_1[partition[1]] - fuel_1[partition[1]-1]
 
-    possdist = []
+    possdist = [0]
     for i in range(1, len_data):
         avgeff.append(dist[i]/(fuel_1[0] - fuel_1[i]))
-        possdist.append(fuel[i] * avgeff[i])
+        possdist.append((fuel[i] * avgeff[i])/10)
     
     print ("Average fuel efficiency is: ", avgeff[len_data-1])
     
+    print (len(possdist))
+
     return ([avgeff, possdist])
 
 
@@ -236,14 +276,20 @@ fueleffgap1(partition, stoplist, fuel, dist, len_data)
 fueleffgap2(partition, fuel, dist, len_data)
 [avgeff, possdist] = avgfueleff(time_sec, pfuel, dist, len_data)
 
+
 # Calculate minite and instant Fuel Efficiency
 insteff = [-1] 
 minueff = [-1]
 for i in range(1, len_data):
-    insteff.append(instanteff(stoplist, partition, pfuel, dist, i))
+    insteff.append(instanteff(stoplist, partition, pfuel, dist, i)/20)
     minueff.append(mineff(stoplist, time_sec, partition, pfuel, dist, i))
 
+for i in range(len_data):
+    if insteff[i] > 1000:
+        insteff[i] = -1
 
+
+plot_2D_3(time_sec, possdist, fuel, insteff, len_data)
 
 len_eff = len_data
 len_eff1 = len_data
@@ -263,10 +309,13 @@ for i in range(1, len(insteff)):
 
 avg = avg /len_eff
 mvag = mvag / len_eff1
-print ("\n\navg of instant fuel efficiency is : ", avg, mvag, "\n")
+
+
+print ("\n\navg of instant fuel efficiency is : ", avg, "\n")
 
 
 plot_2D(time_sec, insteff, speed, len_data)
+plot_2D(time_sec, dist, speed, len_data)
 
 insteff = pd.Series(insteff)
 minueff = pd.Series(minueff)
@@ -287,4 +336,9 @@ timedist = pd.DataFrame({'Time(sec)' : d1["Time(sec)"],
                          
 
 timedist.to_csv('data2.csv', index = False)
+
+
+    
+
+
 

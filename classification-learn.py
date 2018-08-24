@@ -111,10 +111,13 @@ for j in range(numlearn):
     test_X = []
     test_y= []  
     testcases = 0
+    
     for i in range(len_data):
-        #if Vehicle Speed is 0, pass
+        # if Vehicle Speed is 0, pass
         if vsoverrpm[i] == -1:
             continue
+        
+        # Split test and train cases
         rnum = ran.random()
         if rnum > 0.75:
             test_X.append([vsoverrpm[i], troverrpm[i], load[i]])

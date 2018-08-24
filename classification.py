@@ -64,6 +64,8 @@ while i < len_data:
     
 print ("NaN data excluded. Now the length of dataset is:", len_data)
 
+
+
 vsoverrpm = []
 thoverrpm = []
 fload = []
@@ -95,6 +97,7 @@ freqcounter(thoverrpm)
 print ("Engine Load - freq")
 freqcounter2(fload)
 
+# Label '-1' for not-common datas
 label = []
 for i in range(len_data):
     if speed[i] == 0:

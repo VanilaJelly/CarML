@@ -85,8 +85,8 @@ dist = [0]
 for i in range(1, len_data):
     tdiff = (time_in_sec[i] - time_in_sec[i-1])
     # Set the maximum time gap 2 min    
-    if tdiff > 120:
-        tdiff = 120
+    if tdiff > 600:
+        tdiff = 600
     speed = vspeed[i]
     speed0 = vspeed[i-1]    
     dist.append(dist[i-1] + tdiff*(speed+speed0)/7200)

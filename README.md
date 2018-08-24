@@ -1,4 +1,4 @@
-<OBD Data analysis>
+OBD Data analysis
 ===================
 
 Calculating Fuel Efficiency
